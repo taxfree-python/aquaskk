@@ -4,6 +4,12 @@
     "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/JisyoKitTests.o",
     "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/master.swiftdeps"
   },
+  "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/EffectiveListTests.swift": {
+    "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/EffectiveListTests.swift.o",
+    "swiftmodule": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/EffectiveListTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/EffectiveListTests.swiftdeps",
+    "diagnostics": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/EffectiveListTests.dia"
+  },
   "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/JisyoKitTests.swift": {
     "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/JisyoKitTests.swift.o",
     "swiftmodule": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/JisyoKitTests~partial.swiftmodule",

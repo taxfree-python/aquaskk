@@ -263,6 +263,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/EffectiveList.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/Model.swift"
         },
         {
@@ -284,6 +288,7 @@
       "objects" : [
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/AquaSKKClient.swift.o",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/DictionaryStore.swift.o",
+        "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/EffectiveList.swift.o",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/Model.swift.o",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/SystemDictionaries.swift.o"
       ],
@@ -351,6 +356,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/EffectiveList.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/Model.swift.o"
         },
         {
@@ -366,6 +375,7 @@
       "sources" : [
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/AquaSKKClient.swift",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/DictionaryStore.swift",
+        "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/EffectiveList.swift",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/Model.swift",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/SystemDictionaries.swift"
       ],
@@ -377,6 +387,10 @@
       "fileList" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/sources",
       "importPath" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/Modules",
       "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/EffectiveListTests.swift"
+        },
         {
           "kind" : "file",
           "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/JisyoKitTests.swift"
@@ -410,6 +424,7 @@
       "moduleName" : "JisyoKitTests",
       "moduleOutputPath" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/Modules/JisyoKitTests.swiftmodule",
       "objects" : [
+        "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/EffectiveListTests.swift.o",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/JisyoKitTests.swift.o",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/RealFileRoundTripTests.swift.o",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/RealSystemDictionaryTests.swift.o",
@@ -473,6 +488,10 @@
       "outputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/EffectiveListTests.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/JisyoKitTests.swift.o"
         },
         {
@@ -494,6 +513,7 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/EffectiveListTests.swift",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/JisyoKitTests.swift",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/RealFileRoundTripTests.swift",
         "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/RealSystemDictionaryTests.swift",
@@ -646,6 +666,7 @@
       "-c",
       "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/AquaSKKClient.swift",
       "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/DictionaryStore.swift",
+      "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/EffectiveList.swift",
       "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/Model.swift",
       "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/SystemDictionaries.swift",
       "-I",
@@ -710,6 +731,7 @@
       "-package-name",
       "jisyoeditor",
       "-c",
+      "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/EffectiveListTests.swift",
       "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/JisyoKitTests.swift",
       "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/RealFileRoundTripTests.swift",
       "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/RealSystemDictionaryTests.swift",
@@ -868,6 +890,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/EffectiveList.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/Model.swift.o"
         },
         {
@@ -912,11 +938,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/EffectiveList.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/Model.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/SystemDictionaries.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKitTests.build/EffectiveListTests.swift.o"
         },
         {
           "kind" : "file",
@@ -954,6 +988,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/EffectiveList.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/Model.swift"
         },
         {
@@ -969,6 +1007,10 @@
         {
           "kind" : "virtual",
           "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/EffectiveListTests.swift"
         },
         {
           "kind" : "file",

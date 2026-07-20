@@ -177,21 +177,14 @@ final class AppModel: ObservableObject {
 
     // MARK: - Adding system candidates
 
-    /// Append a system candidate (text + annotation) to the END of an existing
-    /// user entry's candidate list, marking it dirty.
-    func appendCandidate(_ candidate: Candidate, toEntryID id: UUID) {
-        guard var entry = document.entries.first(where: { $0.id == id }) else { return }
-        entry.candidates.append(Candidate(text: candidate.text, annotation: candidate.annotation))
-        document.updateEntry(entry)
-        refreshDocumentEdited()
-    }
-
-    /// Create the (reading, section) user entry if it does not yet exist, append
-    /// the given system candidate to it, and switch selection to the new real
-    /// entry. Used from the system-only (pending) detail state.
-    func addSystemCandidate(_ candidate: Candidate, reading: String, section: OkuriSection) {
+    /// Create a brand-new (reading, section) user entry seeded with `candidates`
+    /// (fresh `Candidate` copies so identities are the entry's own), then switch
+    /// selection to it. Used by the merged-list view's pending-entry path, where
+    /// the first pin / add-candidate must materialize the entry and flip the
+    /// detail pane from the system-only view to the real entry view.
+    func createEntry(reading: String, section: OkuriSection, candidates: [Candidate]) {
         var entry = document.insertEntry(reading: reading, section: section)
-        entry.candidates.append(Candidate(text: candidate.text, annotation: candidate.annotation))
+        entry.candidates = candidates.map { Candidate(text: $0.text, annotation: $0.annotation) }
         document.updateEntry(entry)
         pendingSystemSelection = nil
         selectedEntryID = entry.id
