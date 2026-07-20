@@ -58,6 +58,7 @@ namespace SKKUserDefaultKeys {
     DECLARE_NSStringKey(skkserv_port);
 
     DECLARE_NSStringKey(enable_private_mode);
+    DECLARE_NSStringKey(enable_study);
 
     DECLARE_NSStringKey(fix_intermediate_conversion);
     DECLARE_NSStringKey(display_shortest_match_of_kana_conversions);

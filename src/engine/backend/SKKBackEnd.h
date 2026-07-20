@@ -42,6 +42,7 @@ class SKKBackEnd {
     bool useNumericConversion_;
     bool enableExtendedCompletion_;
     int minimumCompletionLength_;
+    bool enableStudy_;
 
     SKKBackEnd();
     SKKBackEnd(const SKKBackEnd&);
@@ -83,6 +84,12 @@ public:
 
     // オプション：補完候補の長さの下限(足切り)
     void SetMinimumCompletionLength(int length);
+
+    // オプション：候補の学習(fork 拡張)
+    // 無効時は候補確定やトグル変換でユーザー辞書を書き換えない。
+    // 単語登録モードと候補削除には影響しない。
+    void EnableStudy(bool flag);
+    bool StudyEnabled() const;
 };
 
 #endif

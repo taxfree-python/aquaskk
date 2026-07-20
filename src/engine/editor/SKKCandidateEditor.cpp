@@ -47,7 +47,10 @@ void SKKCandidateEditor::WriteContext() {
 }
 
 void SKKCandidateEditor::Commit(std::string& queue) {
-    SKKBackEnd::theInstance().Register(entry_, candidate_);
+    // 学習が有効な場合のみ、確定した候補をユーザー辞書に記録する
+    if(SKKBackEnd::theInstance().StudyEnabled()) {
+        SKKBackEnd::theInstance().Register(entry_, candidate_);
+    }
 
     queue = candidate_.Variant();
     candidate_ = SKKCandidate();

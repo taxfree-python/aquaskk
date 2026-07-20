@@ -38,6 +38,8 @@
 - (void)initializeKeyboardLayout;
 - (BOOL)privateMode;
 - (void)setPrivateMode:(BOOL)flag;
+- (BOOL)studyEnabled;
+- (void)setStudyEnabled:(BOOL)flag;
 - (BOOL)directMode;
 - (void)setDirectMode:(BOOL)flag;
 - (void)workAroundForSpecificApplications;
@@ -200,6 +202,7 @@
         { "環境設定",                 @selector(showPreferences:),   0 },
         { "直接入力モード",           @selector(toggleDirectMode:),  @selector(directMode) },
         { "プライベートモード",       @selector(togglePrivateMode:), @selector(privateMode) },
+        { "候補の学習",               @selector(toggleStudy:),       @selector(studyEnabled) },
         { "設定ファイルの再読み込み", @selector(reloadComponents:),  0 },
 #ifdef SKK_DEBUG
         { "デバッグ情報",             @selector(showDebugInfo:),     0 },
@@ -257,6 +260,13 @@
     [self setPrivateMode:![self privateMode]];
 
     SKKBackEnd::theInstance().EnablePrivateMode([self privateMode]);
+}
+
+// 候補の学習トグル(fork 拡張)
+- (void)toggleStudy:(id)sender {
+    [self setStudyEnabled:![self studyEnabled]];
+
+    SKKBackEnd::theInstance().EnableStudy([self studyEnabled] == YES);
 }
 
 - (void)toggleDirectMode:(id)sender {
@@ -337,6 +347,24 @@
 
 - (void)setPrivateMode:(BOOL)flag {
     [[self defaults] setBool:flag forKey:SKKUserDefaultKeys::enable_private_mode];
+}
+
+- (BOOL)studyEnabled {
+    return [[self defaults] boolForKey:SKKUserDefaultKeys::enable_study];
+}
+
+// 再起動や「設定ファイルの再読み込み」で失われないよう、
+// UserDefaults.plist ファイルにも書き戻す
+- (void)setStudyEnabled:(BOOL)flag {
+    [[self defaults] setBool:flag forKey:SKKUserDefaultKeys::enable_study];
+
+    NSMutableDictionary* prefs =
+        [NSMutableDictionary dictionaryWithContentsOfFile:SKKFilePaths::UserDefaults];
+    if(prefs != nil) {
+        [prefs setObject:[NSNumber numberWithBool:flag]
+                  forKey:SKKUserDefaultKeys::enable_study];
+        [prefs writeToFile:SKKFilePaths::UserDefaults atomically:YES];
+    }
 }
 
 - (BOOL)directMode {
