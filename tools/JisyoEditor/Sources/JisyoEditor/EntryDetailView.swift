@@ -1,19 +1,25 @@
 import SwiftUI
 import JisyoKit
 
-/// Right-pane editor for a single existing user entry. Shows ONE merged list
-/// that mirrors the effective SKK conversion order: pinned (user-dictionary)
-/// candidates first, a divider, then the system-dictionary candidates not yet
-/// pinned (system order), plus a read-only hint block when present.
+/// Right-pane editor for a single existing user entry. Shows ONE flat, uniform
+/// list mirroring the effective SKK conversion order: user-dictionary candidates
+/// first (in user order), then system-dictionary candidates not already present
+/// by text (in system order). Every row looks and behaves identically and simply
+/// carries a source tag; there is no divider and no pinned/unpinned distinction.
 struct EntryDetailView: View {
     @EnvironmentObject private var model: AppModel
     @Binding var entry: Entry
 
-    /// ALL system candidates for this reading/section (deduped within the
-    /// system dictionaries, NOT against the user list). The merged list decides
-    /// which of these are already pinned.
+    /// ALL system candidates for this reading/section (deduped within the system
+    /// dictionaries, NOT against the user list). The merged list decides which of
+    /// these are already stored in the user dictionary.
     private var systemCandidates: [Candidate] {
         model.systemDictionaryIndex?.candidates(for: entry.reading, section: entry.section) ?? []
+    }
+
+    /// Total number of effective (displayed) candidates across both sources.
+    private var effectiveCount: Int {
+        CandidateList.build(user: entry.candidates, system: systemCandidates).count
     }
 
     var body: some View {
@@ -24,7 +30,7 @@ struct EntryDetailView: View {
                 hintBlockView(hint)
             }
 
-            Text("上にあるほど変換候補の先頭に来ます。線より上が固定（ユーザー辞書）、下はシステム辞書由来です")
+            Text("上にあるほど変換候補の先頭に来ます。ドラッグまたは ⌘↑/⌘↓ で並べ替え。並べ替え・編集した候補はユーザー辞書に保存されます")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -48,8 +54,7 @@ struct EntryDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            // This counts ONLY the pinned/user candidates, not the merged total.
-            Text("固定 \(entry.candidates.count) 件")
+            Text("全 \(effectiveCount) 候補 ・ ユーザー辞書 \(entry.candidates.count) 件")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -71,82 +76,50 @@ struct EntryDetailView: View {
     }
 }
 
+// MARK: - Field focus identity
+
+/// Focus key for the two text fields of a candidate row, keyed by the row's
+/// candidate id so focus survives re-renders and distinguishes text vs. annotation.
+enum CandidateFieldFocus: Hashable {
+    case text(UUID)
+    case annotation(UUID)
+}
+
 // MARK: - Merged candidate list (shared by real + pending entries)
 
-/// The single `List` that renders the effective conversion order and performs
-/// all pin/unpin/reorder edits as pure `EffectiveList` array transforms applied
-/// back through `userCandidates`.
+/// The single flat `List` that renders the effective conversion order and
+/// performs every edit (reorder, delete, materialize-on-edit) as pure
+/// `CandidateList` array transforms applied back through `userCandidates`.
 ///
 /// For a real entry, `userCandidates` is bound to `entry.candidates`. For a
 /// system-only (pending) reading, `userCandidates` reads as `[]` and its setter
 /// materializes the entry (see `PendingSystemDetailView`), so the very first
-/// pin / add flips the pane to the real entry view.
+/// move / edit / add flips the pane to the real entry view.
 struct MergedCandidateListView: View {
     @Binding var userCandidates: [Candidate]
     let systemCandidates: [Candidate]
     let isSystemLoading: Bool
 
-    /// Row selection distinguishes pinned (user) rows from unpinned (system)
-    /// rows so ⌘↑/⌘↓ and the delete key can behave differently for each. The
-    /// divider and the add-row carry no tag and are therefore not selectable.
-    private enum RowSelection: Hashable {
-        case pinned(UUID)
-        case unpinned(Int) // systemIndex
-    }
-
-    /// The full displayed row array, in display order:
-    ///   [pinned rows…] , add-row , divider , [unpinned rows…]
-    /// The add-row and divider are `.moveDisabled(true)` so they can never be
-    /// drag SOURCES, but they still occupy indices in this array and therefore
-    /// in `.onMove`'s coordinate space.
-    private enum MergedRow: Identifiable, Equatable {
-        case pinned(position: Int, index: Int, candidate: Candidate)
-        case addRow
-        case divider
-        case unpinned(position: Int, systemIndex: Int, candidate: Candidate)
-
-        var id: String {
-            switch self {
-            case let .pinned(_, _, candidate): return "pinned-\(candidate.id.uuidString)"
-            case .addRow: return "add-row"
-            case .divider: return "divider"
-            case let .unpinned(_, systemIndex, candidate): return "unpinned-\(systemIndex)-\(candidate.text)"
-            }
-        }
-    }
-
-    /// A pinned candidate awaiting confirmation to be unpinned because it would
+    /// A user candidate awaiting confirmation to be deleted because it would
     /// disappear entirely (its text is not in the system dictionaries).
-    private struct PendingUnpin: Identifiable {
-        let pinnedIndex: Int
-        var id: Int { pinnedIndex }
+    private struct PendingDelete: Identifiable {
+        let userIndex: Int
+        var id: Int { userIndex }
     }
 
-    @State private var selection: RowSelection?
-    @FocusState private var focusedField: UUID?
-    @State private var pendingUnpin: PendingUnpin?
+    @State private var selection: UUID?
+    @FocusState private var focusedField: CandidateFieldFocus?
+    @State private var pendingDelete: PendingDelete?
+    @State private var pendingFocusID: UUID?
     @State private var hintMessage: String?
     @State private var hintToken = 0
 
-    private static let reorderHint = "システム辞書内の順序は固定です。並べ替えるには線の上へ"
+    private static let reappearHint = "システム辞書にも存在するため候補には残ります"
+    private static let editHint = "編集した候補はユーザー辞書に保存されます"
 
-    /// Build the displayed rows: `EffectiveList.build` gives pinned/divider/
-    /// unpinned; we splice the add-row in immediately before the divider (the
-    /// last row of the pinned region).
-    private var mergedRows: [MergedRow] {
-        var out: [MergedRow] = []
-        for row in EffectiveList.build(userCandidates: userCandidates, systemCandidates: systemCandidates) {
-            switch row {
-            case let .pinned(position, index, candidate):
-                out.append(.pinned(position: position, index: index, candidate: candidate))
-            case .divider:
-                out.append(.addRow)
-                out.append(.divider)
-            case let .unpinned(position, systemIndex, candidate):
-                out.append(.unpinned(position: position, systemIndex: systemIndex, candidate: candidate))
-            }
-        }
-        return out
+    /// The displayed rows in effective conversion order.
+    private var rows: [CandidateList.Row] {
+        CandidateList.build(user: userCandidates, system: systemCandidates)
     }
 
     var body: some View {
@@ -158,10 +131,17 @@ struct MergedCandidateListView: View {
             }
 
             List(selection: $selection) {
-                ForEach(mergedRows) { row in
+                ForEach(rows) { row in
                     rowView(for: row)
+                        .tag(row.candidate.id)
                 }
                 .onMove(perform: handleMove)
+
+                Button(action: addEmptyCandidate) {
+                    Label("候補を追加", systemImage: "plus")
+                }
+                .buttonStyle(.borderless)
+                .padding(.vertical, 4)
 
                 if isSystemLoading {
                     Text("システム辞書を読み込み中…")
@@ -171,8 +151,8 @@ struct MergedCandidateListView: View {
             }
             .frame(minHeight: 240)
             .onDeleteCommand(perform: deleteSelected)
-            // ⌘↑/⌘↓ move the selected PINNED row. Kept as hidden, zero-size
-            // buttons: SwiftUI still fires a hidden button's keyboardShortcut.
+            // ⌘↑/⌘↓ move the selected row one position. Hidden zero-size buttons:
+            // SwiftUI still fires a hidden button's keyboardShortcut.
             .background {
                 Group {
                     Button("上へ") { moveSelected(by: -1) }
@@ -185,199 +165,159 @@ struct MergedCandidateListView: View {
                 .accessibilityHidden(true)
             }
             .alert(
-                "固定解除の確認",
+                "候補の削除",
                 isPresented: Binding(
-                    get: { pendingUnpin != nil },
-                    set: { presented in if !presented { pendingUnpin = nil } }
+                    get: { pendingDelete != nil },
+                    set: { presented in if !presented { pendingDelete = nil } }
                 ),
-                presenting: pendingUnpin
+                presenting: pendingDelete
             ) { pending in
-                Button("削除", role: .destructive) { confirmUnpin(pending) }
-                Button("キャンセル", role: .cancel) { pendingUnpin = nil }
+                Button("削除", role: .destructive) { confirmDelete(pending) }
+                Button("キャンセル", role: .cancel) { pendingDelete = nil }
             } message: { _ in
-                Text("この候補はシステム辞書に存在しないため、固定解除すると完全に削除されます。よろしいですか？")
+                Text("この候補はシステム辞書に存在しないため、削除すると完全に失われます。よろしいですか？")
             }
         }
     }
 
     // MARK: - Row rendering
 
-    @ViewBuilder
-    private func rowView(for row: MergedRow) -> some View {
-        switch row {
-        case let .pinned(position, index, candidate):
-            CandidateRowView(
-                order: position,
-                total: userCandidates.count,
-                candidate: $userCandidates[index],
-                focusedField: $focusedField,
-                onMoveUp: { moveCandidate(id: candidate.id, by: -1) },
-                onMoveDown: { moveCandidate(id: candidate.id, by: 1) },
-                onDelete: { requestUnpin(candidateID: candidate.id) }
-            )
-            .tag(RowSelection.pinned(candidate.id))
-
-        case .addRow:
-            Button(action: addEmptyCandidate) {
-                Label("候補を追加", systemImage: "plus")
-            }
-            .buttonStyle(.borderless)
-            .padding(.vertical, 4)
-            .moveDisabled(true)
-
-        case .divider:
-            Text("── ここから下はシステム辞書の順（固定するには線の上へドラッグ） ──")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, 4)
-                .moveDisabled(true)
-
-        case let .unpinned(position, systemIndex, candidate):
-            UnpinnedCandidateRow(
-                position: position,
-                candidate: candidate,
-                onPin: { pinAtEnd(systemIndex: systemIndex) }
-            )
-            .tag(RowSelection.unpinned(systemIndex))
-        }
+    private func rowView(for row: CandidateList.Row) -> some View {
+        FlatCandidateRow(
+            order: row.position,
+            total: rows.count,
+            source: row.source,
+            candidateID: row.candidate.id,
+            text: row.candidate.text,
+            annotation: row.candidate.annotation,
+            canDelete: row.source == .user,
+            focusedField: $focusedField,
+            autofocus: pendingFocusID == row.candidate.id,
+            onAutofocusHandled: { pendingFocusID = nil },
+            onCommit: { newText, newAnnotation in
+                commitEdit(row: row, newText: newText, newAnnotation: newAnnotation)
+            },
+            onDelete: { requestDelete(row: row) },
+            onMoveUp: { move(sourceDisplayIndex: row.position - 1, by: -1) },
+            onMoveDown: { move(sourceDisplayIndex: row.position - 1, by: 1) }
+        )
     }
 
     // MARK: - Drag handling
     //
-    // `.onMove` reports (source, destination) in the coordinate space of the
-    // FULL `mergedRows` array. With P = userCandidates.count:
-    //     indices 0 ..< P     : pinned rows
-    //     index  P            : add-row      (moveDisabled)
-    //     index  P + 1        : divider      (moveDisabled → dividerIndex)
-    //     indices P+2 ..< end : unpinned rows
-    // Because add-row and divider are moveDisabled they are never a `source`, so
-    // `source` is always a single pinned or unpinned index. `destination` is a
-    // GAP index per `move(fromOffsets:toOffset:)`: the item lands BEFORE the
-    // element originally at `destination` (== end when `destination == count`).
-    //
-    // Worked examples with userCandidates = [A, B] (P=2), unpinned [X, Y]
-    // (display: 0:A 1:B 2:add 3:divider 4:X 5:Y, dividerIndex = 3):
-    //   • drag X(4) → gap 0  : unpin? no, pinned target ≤ dividerIndex → pin at min(0,2)=0 → [X,A,B]
-    //   • drag X(4) → gap 2  : pin at min(2,2)=2 → [A,B,X]
-    //   • drag X(4) → gap 3  : on divider → pin at min(3,2)=2 (end) → [A,B,X]
-    //   • drag X(4) → gap 6  : within unpinned → reject + hint
-    //   • drag Y(5) → gap 4  : within unpinned → reject + hint
-    //   • drag A(0) → gap 2  : within pinned → move toOffset min(2,2)=2 → [B,A]
-    //   • drag A(0) → gap 3  : on divider → move toOffset min(3,2)=2 (end) → [B,A]
-    //   • drag A(0) → gap 4+ : below divider → unpin A
+    // Only the candidate rows live inside the `ForEach`, so `.onMove` reports
+    // indices directly in the displayed-order coordinate space (0 ..< rows.count).
+    // SwiftUI's `destination` is a GAP index in the ORIGINAL array (insert BEFORE
+    // whatever was originally at `destination`); convert it to the moved
+    // element's own final index.
     private func handleMove(source: IndexSet, destination: Int) {
         guard let s = source.first else { return }
-        let rows = mergedRows
-        let pinnedCount = userCandidates.count
-        let dividerIndex = pinnedCount + 1 // add-row sits at pinnedCount
-
-        if s < pinnedCount {
-            // Source is a pinned row.
-            if destination <= dividerIndex {
-                // Stays in the pinned region: reorder within userCandidates.
-                let target = min(destination, pinnedCount)
-                var updated = userCandidates
-                updated.move(fromOffsets: IndexSet(integer: s), toOffset: target)
-                userCandidates = updated
-            } else {
-                // Dropped clearly below the divider → unpin.
-                requestUnpin(pinnedIndex: s)
-            }
-        } else if s >= pinnedCount + 2, s < rows.count, case let .unpinned(_, systemIndex, _) = rows[s] {
-            // Source is an unpinned row.
-            if destination <= dividerIndex {
-                // Dropped above/at the divider → pin at that pinned position.
-                let at = min(destination, pinnedCount)
-                userCandidates = EffectiveList.pin(
-                    userCandidates: userCandidates,
-                    systemCandidates: systemCandidates,
-                    systemIndex: systemIndex,
-                    at: at
-                )
-            } else {
-                // Within-unpinned reorder is meaningless (system order is fixed).
-                showHint(Self.reorderHint)
-            }
-        }
+        let toFinalIndex = destination > s ? destination - 1 : destination
+        move(sourceDisplayIndex: s, to: toFinalIndex)
     }
 
     // MARK: - Operations
 
     private func addEmptyCandidate() {
         let new = Candidate(text: "", annotation: nil)
-        userCandidates = userCandidates + [new]
-        // Best effort: move focus to the new row's text field. (Not verifiable
-        // without launching the app.) In the pending path this is moot because
-        // the setter flips the pane to the real entry view.
-        focusedField = new.id
-        selection = .pinned(new.id)
+        userCandidates.append(new)
+        // Best effort: focus the new row's text field. (In the pending path this
+        // is moot because the setter flips the pane to the real entry view.)
+        pendingFocusID = new.id
+        focusedField = .text(new.id)
+        selection = new.id
     }
 
-    private func pinAtEnd(systemIndex: Int) {
-        userCandidates = EffectiveList.pin(
-            userCandidates: userCandidates,
-            systemCandidates: systemCandidates,
-            systemIndex: systemIndex,
-            at: userCandidates.count
+    /// Move the row at displayed index `sourceDisplayIndex` to final displayed
+    /// index `toFinalIndex`, applying the grow-only prefix rule. No-op when the
+    /// target equals the source (so a drop-in-place never accidentally
+    /// materializes a system row).
+    private func move(sourceDisplayIndex: Int, to toFinalIndex: Int) {
+        let current = rows
+        guard sourceDisplayIndex >= 0, sourceDisplayIndex < current.count else { return }
+        let clampedFinal = min(max(toFinalIndex, 0), current.count - 1)
+        guard clampedFinal != sourceDisplayIndex else { return }
+
+        let newUser = CandidateList.move(
+            user: userCandidates,
+            system: systemCandidates,
+            sourceIndex: sourceDisplayIndex,
+            toFinalIndex: clampedFinal
         )
+        userCandidates = newUser
+
+        // Follow the moved row to its new displayed position so repeated
+        // ⌘↑/⌘↓ keep operating on the same candidate.
+        let rebuilt = CandidateList.build(user: newUser, system: systemCandidates)
+        if clampedFinal < rebuilt.count {
+            selection = rebuilt[clampedFinal].candidate.id
+        }
     }
 
-    private func moveCandidate(id: UUID, by delta: Int) {
-        guard let idx = userCandidates.firstIndex(where: { $0.id == id }) else { return }
-        let target = idx + delta
-        guard target >= 0, target < userCandidates.count else { return }
-        var updated = userCandidates
-        updated.swapAt(idx, target)
-        userCandidates = updated
+    private func move(sourceDisplayIndex: Int, by delta: Int) {
+        move(sourceDisplayIndex: sourceDisplayIndex, to: sourceDisplayIndex + delta)
     }
 
     private func moveSelected(by delta: Int) {
-        guard let selection else { return }
-        switch selection {
-        case let .pinned(id):
-            moveCandidate(id: id, by: delta)
-        case .unpinned:
-            showHint(Self.reorderHint)
+        guard let selection,
+              let idx = rows.firstIndex(where: { $0.candidate.id == selection }) else { return }
+        move(sourceDisplayIndex: idx, by: delta)
+    }
+
+    /// Commit an edit to a row's text/annotation. A user row is overwritten in
+    /// place; a system row is materialized into the user dictionary at its
+    /// current effective position (with the edited value).
+    private func commitEdit(row: CandidateList.Row, newText: String, newAnnotation: String?) {
+        switch row.source {
+        case .user:
+            guard let idx = row.userIndex, idx < userCandidates.count else { return }
+            userCandidates[idx].text = newText
+            userCandidates[idx].annotation = (newAnnotation?.isEmpty ?? true) ? nil : newAnnotation
+        case .system:
+            userCandidates = CandidateList.materializeSystemEdit(
+                user: userCandidates,
+                system: systemCandidates,
+                sourceIndex: row.position - 1,
+                newText: newText,
+                newAnnotation: newAnnotation
+            )
+            showHint(Self.editHint)
         }
     }
 
     private func deleteSelected() {
-        guard case let .pinned(id) = selection else { return } // no-op for unpinned/none
-        requestUnpin(candidateID: id)
+        guard let selection,
+              let row = rows.first(where: { $0.candidate.id == selection }) else { return }
+        requestDelete(row: row)
     }
 
-    /// Unpin the pinned candidate with the given id, resolving its current index.
-    private func requestUnpin(candidateID id: UUID) {
-        guard let idx = userCandidates.firstIndex(where: { $0.id == id }) else { return }
-        requestUnpin(pinnedIndex: idx)
-    }
-
-    /// Unpin the pinned candidate at `pinnedIndex`. If it also lives in the
-    /// system dictionaries it just moves to the unpinned region (no prompt); if
-    /// not, defer the removal behind a confirmation alert.
-    private func requestUnpin(pinnedIndex: Int) {
-        let result = EffectiveList.unpin(
-            userCandidates: userCandidates,
-            systemCandidates: systemCandidates,
-            pinnedIndex: pinnedIndex
+    /// Delete a user row. If its text also lives in a system dictionary it just
+    /// reappears as a system row (with a transient hint); if not, defer the
+    /// removal behind a confirmation alert. System rows are not deletable.
+    private func requestDelete(row: CandidateList.Row) {
+        guard row.source == .user, let idx = row.userIndex else { return }
+        let result = CandidateList.deleteUser(
+            user: userCandidates,
+            system: systemCandidates,
+            userIndex: idx
         )
         if result.wouldBeLost {
-            pendingUnpin = PendingUnpin(pinnedIndex: pinnedIndex)
+            pendingDelete = PendingDelete(userIndex: idx)
         } else {
-            userCandidates = result.candidates
+            userCandidates = result.newUser
             selection = nil
+            showHint(Self.reappearHint)
         }
     }
 
-    private func confirmUnpin(_ pending: PendingUnpin) {
-        let result = EffectiveList.unpin(
-            userCandidates: userCandidates,
-            systemCandidates: systemCandidates,
-            pinnedIndex: pending.pinnedIndex
+    private func confirmDelete(_ pending: PendingDelete) {
+        let result = CandidateList.deleteUser(
+            user: userCandidates,
+            system: systemCandidates,
+            userIndex: pending.userIndex
         )
-        userCandidates = result.candidates
-        pendingUnpin = nil
+        userCandidates = result.newUser
+        pendingDelete = nil
         selection = nil
     }
 
@@ -391,26 +331,38 @@ struct MergedCandidateListView: View {
     }
 }
 
-// MARK: - Rows
+// MARK: - Row
 
-/// One editable pinned candidate row: order badge, primary candidate text
-/// field, secondary annotation field, delete button, drag-handle affordance,
-/// and a context menu (上へ/下へ/削除).
-struct CandidateRowView: View {
+/// One uniform candidate row: order number, editable candidate-text field,
+/// editable annotation field, source badge (ユーザー / システム), delete button
+/// (disabled for システム rows), drag-handle affordance, and a context menu
+/// (上へ / 下へ / 削除).
+///
+/// Both fields buffer their edits in local drafts and commit on Enter or when
+/// focus leaves the row (via `onCommit`). Buffering is required so a システム
+/// row is materialized into the user dictionary only ONCE, on commit — a live
+/// binding would re-materialize (and change the row's identity) on every
+/// keystroke and break editing.
+struct FlatCandidateRow: View {
     let order: Int
     let total: Int
-    @Binding var candidate: Candidate
-    @FocusState.Binding var focusedField: UUID?
+    let source: CandidateList.Source
+    let candidateID: UUID
+    let text: String
+    let annotation: String?
+    let canDelete: Bool
+    @FocusState.Binding var focusedField: CandidateFieldFocus?
+    let autofocus: Bool
+    let onAutofocusHandled: () -> Void
+    let onCommit: (_ text: String, _ annotation: String?) -> Void
+    let onDelete: () -> Void
     let onMoveUp: () -> Void
     let onMoveDown: () -> Void
-    let onDelete: () -> Void
 
-    private var annotationBinding: Binding<String> {
-        Binding(
-            get: { candidate.annotation ?? "" },
-            set: { candidate.annotation = $0.isEmpty ? nil : $0 }
-        )
-    }
+    @State private var draftText: String = ""
+    @State private var draftAnnotation: String = ""
+
+    private var isSystem: Bool { source == .system }
 
     var body: some View {
         HStack(spacing: 8) {
@@ -420,22 +372,29 @@ struct CandidateRowView: View {
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 22, alignment: .trailing)
 
-            TextField("候補", text: $candidate.text)
+            TextField("候補", text: $draftText)
                 .textFieldStyle(.roundedBorder)
                 .frame(minWidth: 140)
-                .focused($focusedField, equals: candidate.id)
+                .focused($focusedField, equals: .text(candidateID))
+                .onSubmit { focusedField = nil }
 
-            TextField("注釈（任意）", text: annotationBinding)
+            TextField("注釈（任意）", text: $draftAnnotation)
                 .textFieldStyle(.roundedBorder)
                 .font(.callout)
-                .foregroundStyle(.secondary)
                 .frame(maxWidth: 160)
+                .focused($focusedField, equals: .annotation(candidateID))
+                .onSubmit { focusedField = nil }
+
+            sourceBadge
+
+            Spacer(minLength: 0)
 
             Button(role: .destructive, action: onDelete) {
                 Image(systemName: "trash")
             }
             .buttonStyle(.borderless)
-            .help("この候補の固定を解除")
+            .disabled(!canDelete)
+            .help(canDelete ? "この候補を削除" : "システム辞書の候補は削除できません")
 
             Image(systemName: "line.3.horizontal")
                 .foregroundStyle(.secondary)
@@ -449,53 +408,55 @@ struct CandidateRowView: View {
                 .disabled(order >= total)
             Divider()
             Button(role: .destructive, action: onDelete) { Label("削除", systemImage: "trash") }
+                .disabled(!canDelete)
+        }
+        .onAppear {
+            draftText = text
+            draftAnnotation = annotation ?? ""
+            if autofocus {
+                focusedField = .text(candidateID)
+                onAutofocusHandled()
+            }
+        }
+        .onChange(of: text) { newValue in
+            if !isEditingThisRow { draftText = newValue }
+        }
+        .onChange(of: annotation) { newValue in
+            if !isEditingThisRow { draftAnnotation = newValue ?? "" }
+        }
+        .onChange(of: focusedField) { newFocus in
+            let stillMine = newFocus == .text(candidateID) || newFocus == .annotation(candidateID)
+            if !stillMine { commit() }
         }
     }
-}
 
-/// One dimmed, read-only unpinned (system-dictionary) row: continuous order
-/// badge, text + annotation, and a 固定 (pin) button that pins it to the end of
-/// the user list.
-struct UnpinnedCandidateRow: View {
-    let position: Int
-    let candidate: Candidate
-    let onPin: () -> Void
+    private var isEditingThisRow: Bool {
+        focusedField == .text(candidateID) || focusedField == .annotation(candidateID)
+    }
 
-    var body: some View {
-        HStack(spacing: 8) {
-            Text("\(position)")
-                .font(.callout)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 22, alignment: .trailing)
+    private func commit() {
+        let newText = draftText
+        let newAnnotation = draftAnnotation.isEmpty ? nil : draftAnnotation
+        guard newText != text || newAnnotation != annotation else { return }
+        onCommit(newText, newAnnotation)
+    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(candidate.text)
-                    .foregroundStyle(.secondary)
-                if let annotation = candidate.annotation, !annotation.isEmpty {
-                    Text(annotation)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-            }
-
-            Spacer()
-
-            Button(action: onPin) {
-                Label("固定", systemImage: "pin")
-            }
-            .buttonStyle(.borderless)
-            .help("この候補をユーザー辞書に固定")
-        }
-        .padding(.vertical, 4)
+    private var sourceBadge: some View {
+        Text(isSystem ? "システム" : "ユーザー")
+            .font(.caption2)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(Color.secondary.opacity(0.15)))
+            .foregroundStyle(.secondary)
+            .help(isSystem ? "システム辞書由来の候補" : "ユーザー辞書の候補")
     }
 }
 
 // MARK: - Pending (system-only) reading
 
-/// Detail pane for a system-only reading with no user entry yet. Reuses the
-/// merged list with an empty pinned region; the first pin / add materializes the
-/// user entry (via `AppModel.createEntry`) and switches to it.
+/// Detail pane for a system-only reading with no user entry yet. Reuses the same
+/// flat list with an empty user array; the first move / edit / add materializes
+/// the user entry (via `AppModel.createEntry`) and switches to it.
 struct PendingSystemDetailView: View {
     @EnvironmentObject private var model: AppModel
     let reading: String
@@ -505,7 +466,7 @@ struct PendingSystemDetailView: View {
         model.systemDictionaryIndex?.candidates(for: reading, section: section) ?? []
     }
 
-    /// Reads empty (no pinned candidates yet); a write materializes the entry.
+    /// Reads empty (no user candidates yet); a write materializes the entry.
     private var userCandidatesBinding: Binding<[Candidate]> {
         Binding(
             get: { [] },
@@ -532,7 +493,7 @@ struct PendingSystemDetailView: View {
                 Spacer()
             }
 
-            Text("この読みはユーザー辞書にありません。候補を固定するとエントリが作成されます。")
+            Text("この読みはユーザー辞書にありません。候補を編集・並べ替えするとエントリが作成されます。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

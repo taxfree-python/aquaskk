@@ -2,12 +2,12 @@
   "": {
     "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/master.swiftdeps"
   },
-  "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/EffectiveListTests.swift": {
-    "dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/EffectiveListTests.d",
-    "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/EffectiveListTests.swift.o",
-    "swiftmodule": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/EffectiveListTests~partial.swiftmodule",
-    "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/EffectiveListTests.swiftdeps",
-    "diagnostics": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/EffectiveListTests.dia"
+  "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/CandidateListTests.swift": {
+    "dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/CandidateListTests.d",
+    "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/CandidateListTests.swift.o",
+    "swiftmodule": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/CandidateListTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/CandidateListTests.swiftdeps",
+    "diagnostics": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/CandidateListTests.dia"
   },
   "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/JisyoKitTests.swift": {
     "dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/JisyoKitTests.d",

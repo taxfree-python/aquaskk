@@ -10,17 +10,17 @@
     "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/AquaSKKClient.swiftdeps",
     "diagnostics": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/AquaSKKClient.dia"
   },
+  "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/CandidateList.swift": {
+    "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/CandidateList.swift.o",
+    "swiftmodule": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/CandidateList~partial.swiftmodule",
+    "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/CandidateList.swiftdeps",
+    "diagnostics": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/CandidateList.dia"
+  },
   "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/DictionaryStore.swift": {
     "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/DictionaryStore.swift.o",
     "swiftmodule": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/DictionaryStore~partial.swiftmodule",
     "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/DictionaryStore.swiftdeps",
     "diagnostics": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/DictionaryStore.dia"
-  },
-  "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/EffectiveList.swift": {
-    "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/EffectiveList.swift.o",
-    "swiftmodule": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/EffectiveList~partial.swiftmodule",
-    "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/EffectiveList.swiftdeps",
-    "diagnostics": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/EffectiveList.dia"
   },
   "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Sources/JisyoKit/Model.swift": {
     "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/release/JisyoKit.build/Model.swift.o",
