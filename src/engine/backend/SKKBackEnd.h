@@ -90,6 +90,10 @@ public:
     // 単語登録モードと候補削除には影響しない。
     void EnableStudy(bool flag);
     bool StudyEnabled() const;
+
+    // 外部エディタ連携用(fork 拡張)
+    void SaveUserDictionary();
+    void ReloadUserDictionary();
 };
 
 #endif
