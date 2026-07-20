@@ -83,6 +83,10 @@ public:
 
     // オプション：補完候補の長さの下限(足切り)
     void SetMinimumCompletionLength(int length);
+
+    // 外部エディタ連携用(fork 拡張)
+    void SaveUserDictionary();
+    void ReloadUserDictionary();
 };
 
 #endif

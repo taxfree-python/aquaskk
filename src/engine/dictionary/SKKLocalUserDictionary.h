@@ -55,6 +55,9 @@ public:
     virtual void Remove(const SKKEntry& entry, const SKKCandidate& candidate);
 
     virtual void SetPrivateMode(bool flag);
+
+    virtual void Save();
+    virtual void Reload();
 };
 
 #endif

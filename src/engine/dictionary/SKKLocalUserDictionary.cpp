@@ -207,6 +207,26 @@ void SKKLocalUserDictionary::SetPrivateMode(bool flag) {
     }
 }
 
+void SKKLocalUserDictionary::Save() {
+    if(path_.empty()) return;
+
+    save(true);
+}
+
+void SKKLocalUserDictionary::Reload() {
+    if(path_.empty()) return;
+
+    if(!file_.Load(path_)) {
+        std::cerr << "SKKLocalUserDictionary: can't reload file: " << path_ << std::endl;
+        return;
+    }
+
+    idle_count_ = 0;
+    lastupdate_ = std::time(0);
+
+    fix();
+}
+
 // ======================================================================
 // private method
 // ======================================================================

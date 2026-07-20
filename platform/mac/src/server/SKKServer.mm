@@ -83,6 +83,9 @@ static void terminate(int) {
 - (void)prepareSignalHandler;
 - (void)prepareDirectory;
 - (void)prepareConnection;
+- (void)prepareDistributedNotifications;
+- (void)handleSaveUserDictionary:(NSNotification*)notification;
+- (void)handleReloadUserDictionary:(NSNotification*)notification;
 - (void)prepareUserDefaults;
 - (void)prepareDictionary;
 - (void)prepareBlacklistApps;
@@ -104,6 +107,7 @@ static void terminate(int) {
     [self prepareSignalHandler];
     [self prepareDirectory];
     [self prepareConnection];
+    [self prepareDistributedNotifications];
     [self prepareUserDefaults];
     [self prepareDictionary];
     [self prepareBlacklistApps];
@@ -306,6 +310,40 @@ static void terminate(int) {
     [connection_ registerName:SKKSupervisorConnectionName];
     [connection_ setRootObject:self];
     [connection_ runInNewThread];
+}
+
+// 外部辞書エディタ連携用(fork 拡張)
+// メインスレッドで配送されるため、IMKit のキー処理と直列化される
+- (void)prepareDistributedNotifications {
+    NSDistributedNotificationCenter* center = [NSDistributedNotificationCenter defaultCenter];
+
+    [center addObserver:self
+               selector:@selector(handleSaveUserDictionary:)
+                   name:@"AquaSKK_SaveUserDictionary"
+                 object:nil];
+
+    [center addObserver:self
+               selector:@selector(handleReloadUserDictionary:)
+                   name:@"AquaSKK_ReloadUserDictionary"
+                 object:nil];
+}
+
+- (void)handleSaveUserDictionary:(NSNotification*)notification {
+    NSLog(@"saving user dictionary (requested by external editor)");
+
+    SKKBackEnd::theInstance().SaveUserDictionary();
+
+    [[NSDistributedNotificationCenter defaultCenter]
+        postNotificationName:@"AquaSKK_UserDictionarySaved" object:nil];
+}
+
+- (void)handleReloadUserDictionary:(NSNotification*)notification {
+    NSLog(@"reloading user dictionary (requested by external editor)");
+
+    SKKBackEnd::theInstance().ReloadUserDictionary();
+
+    [[NSDistributedNotificationCenter defaultCenter]
+        postNotificationName:@"AquaSKK_UserDictionaryReloaded" object:nil];
 }
 
 - (void)prepareUserDefaults {
