@@ -31,6 +31,10 @@ public:
     virtual void Register(const SKKEntry& entry, const SKKCandidate& candidate) = 0;
     virtual void Remove(const SKKEntry& entry, const SKKCandidate& candidate) = 0;
     virtual void SetPrivateMode(bool flag) = 0;
+
+    // 外部エディタ連携用(fork 拡張)
+    virtual void Save() {}
+    virtual void Reload() {}
 };
 
 #endif

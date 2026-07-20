@@ -274,6 +274,18 @@ bool SKKBackEnd::StudyEnabled() const {
     return enableStudy_;
 }
 
+void SKKBackEnd::SaveUserDictionary() {
+    if(userdict_.get()) {
+        userdict_->Save();
+    }
+}
+
+void SKKBackEnd::ReloadUserDictionary() {
+    if(userdict_.get()) {
+        userdict_->Reload();
+    }
+}
+
 // ----------------------------------------------------------------------
 
 SKKEntry SKKBackEnd::normalize(const SKKEntry& entry) {
