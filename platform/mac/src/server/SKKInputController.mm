@@ -258,17 +258,27 @@
 }
 
 // 外部辞書エディタ「候補順」(fork 拡張)。~/Applications 直下、なければ
-// LaunchServices の登録から探す。
+// LaunchServices の登録から探し、どちらも無ければ案内を表示する。
 - (void)openJisyoEditor:(id)sender {
     NSWorkspace* workspace = [NSWorkspace sharedWorkspace];
     NSString* path = [NSHomeDirectory() stringByAppendingPathComponent:@"Applications/Kohojun.app"];
 
-    if(![workspace launchApplication:path]) {
-        NSString* registered = [workspace absolutePathForAppBundleWithIdentifier:@"org.codefirst.aquaskk.kohojun"];
-        if(registered != nil) {
-            [workspace launchApplication:registered];
-        }
-    }
+    if([workspace launchApplication:path]) return;
+
+    NSString* registered = [workspace absolutePathForAppBundleWithIdentifier:@"org.codefirst.aquaskk.kohojun"];
+    if(registered != nil && [workspace launchApplication:registered]) return;
+
+    NSAlert* alert = [[[NSAlert alloc] init] autorelease];
+    [alert addButtonWithTitle:@"OK"];
+    [alert setMessageText:@"候補順が見つかりません"];
+    [alert setInformativeText:@"辞書エディタ「候補順」がインストールされていません。"
+                              @"kohojun リポジトリで make install を実行して "
+                              @"~/Applications/Kohojun.app を配置してください。"];
+    [alert setAlertStyle:NSAlertStyleWarning];
+    [[alert window] setLevel:kCGPopUpMenuWindowLevel];
+    [[alert window] setTitle:@"AquaSKK"];
+
+    [alert beginSheetModalForWindow:0 modalDelegate:self didEndSelector:0 contextInfo:0];
 }
 
 - (void)togglePrivateMode:(id)sender {
