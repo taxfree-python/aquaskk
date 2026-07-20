@@ -40,6 +40,7 @@
 - (void)setPrivateMode:(BOOL)flag;
 - (BOOL)studyEnabled;
 - (void)setStudyEnabled:(BOOL)flag;
+- (NSString*)jisyoEditorPath;
 - (BOOL)directMode;
 - (void)setDirectMode:(BOOL)flag;
 - (void)workAroundForSpecificApplications;
@@ -245,6 +246,14 @@
         [inputMenu addItem:item];
     }
 
+    // 設定された辞書エディタが実在するときだけ、環境設定の直下に項目を表示する(fork 拡張)
+    if([self jisyoEditorPath] != nil) {
+        NSMenuItem* editorItem = [[[NSMenuItem alloc] initWithTitle:@"辞書エディタを開く"
+                                                             action:@selector(openJisyoEditor:)
+                                                      keyEquivalent:@""] autorelease];
+        [inputMenu insertItem:editorItem atIndex:1];
+    }
+
     return inputMenu;
 }
 
@@ -254,6 +263,15 @@
                                [[NSBundle mainBundle] sharedSupportPath]];
 
     [[NSWorkspace sharedWorkspace] launchApplication:path];
+}
+
+// 設定された外部辞書エディタを起動する(fork 拡張)
+- (void)openJisyoEditor:(id)sender {
+    NSString* path = [self jisyoEditorPath];
+
+    if(path != nil) {
+        [[NSWorkspace sharedWorkspace] launchApplication:path];
+    }
 }
 
 - (void)togglePrivateMode:(id)sender {
@@ -362,6 +380,17 @@
         [prefs setObject:[NSNumber numberWithBool:flag] forKey:SKKUserDefaultKeys::enable_study];
         [prefs writeToFile:SKKFilePaths::UserDefaults atomically:YES];
     }
+}
+
+// 設定された辞書エディタの実在するパス。未設定または不在なら nil(fork 拡張)
+- (NSString*)jisyoEditorPath {
+    NSString* path = [[self defaults] stringForKey:SKKUserDefaultKeys::jisyo_editor_path];
+
+    if(path == nil || [path length] == 0) return nil;
+
+    path = [path stringByExpandingTildeInPath];
+
+    return [[NSFileManager defaultManager] fileExistsAtPath:path] ? path : nil;
 }
 
 - (BOOL)directMode {

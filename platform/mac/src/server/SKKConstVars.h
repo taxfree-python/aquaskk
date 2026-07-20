@@ -60,6 +60,7 @@ namespace SKKUserDefaultKeys {
 
     extern NSString* enable_private_mode;
     extern NSString* enable_study;
+    extern NSString* jisyo_editor_path;
 
     extern NSString* fix_intermediate_conversion;
     extern NSString* display_shortest_match_of_kana_conversions;

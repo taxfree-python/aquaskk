@@ -58,6 +58,9 @@
         <key>enable_study</key>
         <false/>
 
+        <key>jisyo_editor_path</key>
+        <string>~/Applications/Kohojun.app</string>
+
         <key>fix_intermediate_conversion</key>
         <true/>
         <key>display_shortest_match_of_kana_conversions</key>
