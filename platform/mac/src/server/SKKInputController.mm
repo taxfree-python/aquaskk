@@ -202,7 +202,7 @@
         { "環境設定",                 @selector(showPreferences:),   0 },
         { "直接入力モード",           @selector(toggleDirectMode:),  @selector(directMode) },
         { "プライベートモード",       @selector(togglePrivateMode:), @selector(privateMode) },
-        { "変換候補の学習",           @selector(toggleStudy:),       @selector(studyEnabled) },
+        { "変換候補の順序の学習",     @selector(toggleStudy:),       @selector(studyEnabled) },
         { "設定ファイルの再読み込み", @selector(reloadComponents:),  0 },
 #ifdef SKK_DEBUG
         { "デバッグ情報",             @selector(showDebugInfo:),     0 },
