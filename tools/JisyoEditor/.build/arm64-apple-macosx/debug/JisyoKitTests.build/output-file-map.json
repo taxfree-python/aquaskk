@@ -1,0 +1,19 @@
+{
+  "": {
+    "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/master.swiftdeps"
+  },
+  "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/JisyoKitTests.swift": {
+    "dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/JisyoKitTests.d",
+    "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/JisyoKitTests.swift.o",
+    "swiftmodule": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/JisyoKitTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/JisyoKitTests.swiftdeps",
+    "diagnostics": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/JisyoKitTests.dia"
+  },
+  "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/Tests/JisyoKitTests/RealFileRoundTripTests.swift": {
+    "dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/RealFileRoundTripTests.d",
+    "object": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/RealFileRoundTripTests.swift.o",
+    "swiftmodule": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/RealFileRoundTripTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/RealFileRoundTripTests.swiftdeps",
+    "diagnostics": "/Users/yuchinen/Projects/aquaskk/tools/JisyoEditor/.build/arm64-apple-macosx/debug/JisyoKitTests.build/RealFileRoundTripTests.dia"
+  }
+}
