@@ -118,6 +118,7 @@ SKKBackEnd::SKKBackEnd()
     , useNumericConversion_(false)
     , enableExtendedCompletion_(false)
     , minimumCompletionLength_(0)
+    , enableStudy_(true)
 {}
 
 SKKBackEnd& SKKBackEnd::theInstance() {
@@ -263,6 +264,14 @@ void SKKBackEnd::EnablePrivateMode(bool flag) {
 
 void SKKBackEnd::SetMinimumCompletionLength(int length) {
     minimumCompletionLength_ = length;
+}
+
+void SKKBackEnd::EnableStudy(bool flag) {
+    enableStudy_ = flag;
+}
+
+bool SKKBackEnd::StudyEnabled() const {
+    return enableStudy_;
 }
 
 void SKKBackEnd::SaveUserDictionary() {

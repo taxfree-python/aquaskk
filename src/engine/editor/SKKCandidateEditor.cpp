@@ -47,8 +47,10 @@ void SKKCandidateEditor::WriteContext() {
 }
 
 void SKKCandidateEditor::Commit(std::string& queue) {
-    // このforkでは候補確定を学習しない。
-    // ユーザー辞書は単語登録モードと手動編集でのみ変更される。
+    // 学習が有効な場合のみ、確定した候補をユーザー辞書に記録する
+    if(SKKBackEnd::theInstance().StudyEnabled()) {
+        SKKBackEnd::theInstance().Register(entry_, candidate_);
+    }
 
     queue = candidate_.Variant();
     candidate_ = SKKCandidate();

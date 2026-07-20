@@ -157,6 +157,9 @@ static void terminate(int) {
     flag = [defaults boolForKey:SKKUserDefaultKeys::enable_private_mode] == YES;
     SKKBackEnd::theInstance().EnablePrivateMode(flag);
 
+    flag = [defaults boolForKey:SKKUserDefaultKeys::enable_study] == YES;
+    SKKBackEnd::theInstance().EnableStudy(flag);
+
     NSInteger length = [defaults integerForKey:SKKUserDefaultKeys::minimum_completion_length];
     SKKBackEnd::theInstance().SetMinimumCompletionLength((int)length);
 }

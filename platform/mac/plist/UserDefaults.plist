@@ -55,6 +55,9 @@
         <key>enable_private_mode</key>
         <false/>
 
+        <key>enable_study</key>
+        <false/>
+
         <key>fix_intermediate_conversion</key>
         <true/>
         <key>display_shortest_match_of_kana_conversions</key>
