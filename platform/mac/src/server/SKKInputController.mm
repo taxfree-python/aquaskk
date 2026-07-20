@@ -198,7 +198,7 @@
         SEL state;
     } items[] = {
         { "環境設定",                 @selector(showPreferences:),   0 },
-        { "辞書エディタを開く",       @selector(openJisyoEditor:),   0 },
+        { "候補順を開く",             @selector(openJisyoEditor:),   0 },
         { "直接入力モード",           @selector(toggleDirectMode:),  @selector(directMode) },
         { "プライベートモード",       @selector(togglePrivateMode:), @selector(privateMode) },
         { "設定ファイルの再読み込み", @selector(reloadComponents:),  0 },
@@ -254,14 +254,14 @@
     [[NSWorkspace sharedWorkspace] launchApplication:path];
 }
 
-// 外部辞書エディタ(fork 拡張)。~/Applications 直下、なければ
+// 外部辞書エディタ「候補順」(fork 拡張)。~/Applications 直下、なければ
 // LaunchServices の登録から探す。
 - (void)openJisyoEditor:(id)sender {
     NSWorkspace* workspace = [NSWorkspace sharedWorkspace];
-    NSString* path = [NSHomeDirectory() stringByAppendingPathComponent:@"Applications/JisyoEditor.app"];
+    NSString* path = [NSHomeDirectory() stringByAppendingPathComponent:@"Applications/Kohojun.app"];
 
     if(![workspace launchApplication:path]) {
-        NSString* registered = [workspace absolutePathForAppBundleWithIdentifier:@"org.codefirst.aquaskk.jisyoeditor"];
+        NSString* registered = [workspace absolutePathForAppBundleWithIdentifier:@"org.codefirst.aquaskk.kohojun"];
         if(registered != nil) {
             [workspace launchApplication:registered];
         }
