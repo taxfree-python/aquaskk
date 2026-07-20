@@ -316,6 +316,7 @@ static void terminate(int) {
 }
 
 // 外部辞書エディタ連携用(fork 拡張)
+// 既存の NSConnection は deprecated かつ Swift から利用できないため、一方向の保存/再読込指示 + ack には分散通知(プロセス間 pub/sub)で足りる
 // メインスレッドで配送されるため、IMKit のキー処理と直列化される
 - (void)prepareDistributedNotifications {
     NSDistributedNotificationCenter* center = [NSDistributedNotificationCenter defaultCenter];
