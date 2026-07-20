@@ -3,6 +3,7 @@ import JisyoKit
 
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var confirmingRevert = false
 
     var body: some View {
         NavigationSplitView {
@@ -21,13 +22,27 @@ struct ContentView: View {
                 }
                 .keyboardShortcut("s", modifiers: .command)
                 .disabled(!model.isDirty)
+                .help("保存してAquaSKKに反映 (⌘S)")
 
                 Button {
-                    model.revert()
+                    if model.isDirty {
+                        confirmingRevert = true
+                    } else {
+                        model.revert()
+                    }
                 } label: {
                     Label("破棄して再読み込み", systemImage: "arrow.clockwise")
                 }
+                .help("編集を破棄して辞書を読み込み直す")
             }
+        }
+        .alert("未保存の編集を破棄しますか?", isPresented: $confirmingRevert) {
+            Button("破棄して再読み込み", role: .destructive) {
+                model.revert()
+            }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("保存していない並べ替え・編集は失われます。")
         }
         // Status area pinned to the bottom of the window.
         .safeAreaInset(edge: .bottom) {
