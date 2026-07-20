@@ -203,11 +203,13 @@
         { "環境設定",                 @selector(showPreferences:),   0 },
         { "直接入力モード",           @selector(toggleDirectMode:),  @selector(directMode) },
         { "プライベートモード",       @selector(togglePrivateMode:), @selector(privateMode) },
-        { "変換候補の順序の学習",     @selector(toggleStudy:),       @selector(studyEnabled) },
         { "設定ファイルの再読み込み", @selector(reloadComponents:),  0 },
 #ifdef SKK_DEBUG
         { "デバッグ情報",             @selector(showDebugInfo:),     0 },
 #endif
+        // fork 拡張の専用セクション(辞書エディタ項目もここに挿入される)
+        { "separator",                0,                             0 },
+        { "変換候補の順序の学習",     @selector(toggleStudy:),       @selector(studyEnabled) },
         { "separator",                0,                             0 },
         { "Web::日本語を快適に",      @selector(webHome:),           0 },
         { "Web::SourceForge.JP",      @selector(webSourceForge:),    0 },
@@ -246,12 +248,13 @@
         [inputMenu addItem:item];
     }
 
-    // 設定された辞書エディタが実在するときだけ、環境設定の直下に項目を表示する(fork 拡張)
+    // 設定された辞書エディタが実在するときだけ、fork セクションの先頭に項目を表示する
     if([self jisyoEditorPath] != nil) {
         NSMenuItem* editorItem = [[[NSMenuItem alloc] initWithTitle:@"辞書エディタを開く"
                                                              action:@selector(openJisyoEditor:)
                                                       keyEquivalent:@""] autorelease];
-        [inputMenu insertItem:editorItem atIndex:1];
+        NSInteger studyIndex = [inputMenu indexOfItemWithTitle:@"変換候補の順序の学習"];
+        [inputMenu insertItem:editorItem atIndex:studyIndex];
     }
 
     return inputMenu;
