@@ -2,8 +2,29 @@ import Foundation
 import SwiftUI
 import JisyoKit
 
+/// Unified sidebar selection: either a real user entry (by id) or a
+/// system-only reading that does not yet exist in the user dictionary.
+enum SidebarSelection: Hashable {
+    case entry(UUID)
+    case systemReading(reading: String, section: OkuriSection)
+}
+
+/// A system-only reading that is currently "selected" but has no user entry yet.
+struct PendingSystemSelection: Equatable {
+    var reading: String
+    var section: OkuriSection
+}
+
+/// One row in the sidebar's "system-only" section.
+struct SystemOnlyReading: Identifiable, Hashable {
+    let reading: String
+    let section: OkuriSection
+    var id: String { (section == .okuriAri ? "A:" : "N:") + reading }
+}
+
 /// The single observable model backing the whole UI. Owns the parsed document,
-/// selection, search text, status text, and all AquaSKK notification plumbing.
+/// selection, search text, status text, the loaded system-dictionary index, and
+/// all AquaSKK notification plumbing.
 @MainActor
 final class AppModel: ObservableObject {
     @Published var document = Document(items: [])
@@ -11,8 +32,18 @@ final class AppModel: ObservableObject {
     @Published var selectedEntryID: UUID?
     @Published var statusMessage = "起動中…"
 
+    /// A system-only reading selected in the sidebar (mutually exclusive with
+    /// `selectedEntryID`). Its user entry is created lazily on first 追加.
+    @Published var pendingSystemSelection: PendingSystemSelection?
+
+    /// The loaded system dictionaries (nil until the first load completes).
+    @Published var systemDictionaryIndex: SystemDictionaryIndex?
+    /// Whether at least one system-dictionary load has finished.
+    @Published var systemDictionariesLoaded = false
+
     private let store: DictionaryStore
     private let client: AquaSKKNotifying
+    private let systemDictionarySetURL: URL
 
     private var ackObservers: [NSObjectProtocol] = []
     private var ackWorkItem: DispatchWorkItem?
@@ -24,10 +55,12 @@ final class AppModel: ObservableObject {
 
     init(
         store: DictionaryStore = DictionaryStore(url: DictionaryStore.defaultURL),
-        client: AquaSKKNotifying = DistributedAquaSKKClient()
+        client: AquaSKKNotifying = DistributedAquaSKKClient(),
+        systemDictionarySetURL: URL = SystemDictionaries.defaultDictionarySetURL
     ) {
         self.store = store
         self.client = client
+        self.systemDictionarySetURL = systemDictionarySetURL
         subscribeForAcks()
     }
 
@@ -74,19 +107,113 @@ final class AppModel: ObservableObject {
         )
     }
 
+    // MARK: - Unified sidebar selection
+
+    /// Translates the two-source selection state into a single value for the
+    /// sidebar `List`'s `selection:` binding, keeping the two sources mutually
+    /// exclusive.
+    var sidebarSelection: SidebarSelection? {
+        get {
+            if let id = selectedEntryID { return .entry(id) }
+            if let pending = pendingSystemSelection {
+                return .systemReading(reading: pending.reading, section: pending.section)
+            }
+            return nil
+        }
+        set {
+            switch newValue {
+            case .entry(let id):
+                pendingSystemSelection = nil
+                selectedEntryID = id
+            case .systemReading(let reading, let section):
+                selectedEntryID = nil
+                pendingSystemSelection = PendingSystemSelection(reading: reading, section: section)
+            case .none:
+                selectedEntryID = nil
+                pendingSystemSelection = nil
+            }
+        }
+    }
+
+    // MARK: - System-only sidebar results
+
+    /// Readings that prefix-match `searchText` across BOTH system sections but
+    /// have no user entry for that exact (reading, section) pair. Returns up to
+    /// `limit` rows plus the count of matches beyond those shown.
+    func systemOnlyResults(limit: Int = 50) -> (rows: [SystemOnlyReading], overflow: Int) {
+        guard !searchText.isEmpty, let index = systemDictionaryIndex else { return ([], 0) }
+        let prefix = searchText
+
+        let userNasi = Set(
+            document.entries.filter { $0.section == .okuriNasi && $0.reading.hasPrefix(prefix) }.map(\.reading)
+        )
+        let userAri = Set(
+            document.entries.filter { $0.section == .okuriAri && $0.reading.hasPrefix(prefix) }.map(\.reading)
+        )
+
+        // Fetch enough that, even after removing user-covered readings, we can
+        // still fill `limit` and detect overflow.
+        let nasiFetch = index.okuriNasi.prefixReadings(prefix, limit: limit + userNasi.count + 1)
+        let ariFetch = index.okuriAri.prefixReadings(prefix, limit: limit + userAri.count + 1)
+
+        // Exact system-only totals: total system matches minus the ones the user
+        // already has (only those actually present in the system index count).
+        let excludeNasi = userNasi.reduce(0) { $0 + (index.okuriNasi.contains($1) ? 1 : 0) }
+        let excludeAri = userAri.reduce(0) { $0 + (index.okuriAri.contains($1) ? 1 : 0) }
+        let filteredTotal = (nasiFetch.totalMatches - excludeNasi) + (ariFetch.totalMatches - excludeAri)
+
+        var rows: [SystemOnlyReading] = []
+        for reading in nasiFetch.results where !userNasi.contains(reading) {
+            rows.append(SystemOnlyReading(reading: reading, section: .okuriNasi))
+        }
+        for reading in ariFetch.results where !userAri.contains(reading) {
+            rows.append(SystemOnlyReading(reading: reading, section: .okuriAri))
+        }
+
+        let shown = Array(rows.prefix(limit))
+        let overflow = max(0, filteredTotal - shown.count)
+        return (shown, overflow)
+    }
+
+    // MARK: - Adding system candidates
+
+    /// Append a system candidate (text + annotation) to the END of an existing
+    /// user entry's candidate list, marking it dirty.
+    func appendCandidate(_ candidate: Candidate, toEntryID id: UUID) {
+        guard var entry = document.entries.first(where: { $0.id == id }) else { return }
+        entry.candidates.append(Candidate(text: candidate.text, annotation: candidate.annotation))
+        document.updateEntry(entry)
+        refreshDocumentEdited()
+    }
+
+    /// Create the (reading, section) user entry if it does not yet exist, append
+    /// the given system candidate to it, and switch selection to the new real
+    /// entry. Used from the system-only (pending) detail state.
+    func addSystemCandidate(_ candidate: Candidate, reading: String, section: OkuriSection) {
+        var entry = document.insertEntry(reading: reading, section: section)
+        entry.candidates.append(Candidate(text: candidate.text, annotation: candidate.annotation))
+        document.updateEntry(entry)
+        pendingSystemSelection = nil
+        selectedEntryID = entry.id
+        refreshDocumentEdited()
+    }
+
     // MARK: - Load / Revert
 
-    /// Launch/refresh flow: ask AquaSKK to flush, wait, then read from disk.
+    /// Launch/refresh flow: ask AquaSKK to flush, wait, then read from disk. Also
+    /// (re)loads the system dictionaries off the main thread.
     func load() {
         client.post(AquaSKKNotification.saveUserDictionary)
         statusMessage = "AquaSKKの書き出しを待機中…"
         DispatchQueue.main.asyncAfter(deadline: .now() + flushDelay) { [weak self] in
             self?.readFromDisk()
         }
+        loadSystemDictionaries()
     }
 
     func revert() {
         selectedEntryID = nil
+        pendingSystemSelection = nil
         load()
     }
 
@@ -100,6 +227,24 @@ final class AppModel: ObservableObject {
             statusMessage = "読み込みに失敗しました: \(error.localizedDescription)"
         }
         refreshDocumentEdited()
+    }
+
+    /// Load the system dictionaries off the main thread, then publish the result
+    /// and APPEND a summary to the status line (without clobbering it).
+    private func loadSystemDictionaries() {
+        let url = systemDictionarySetURL
+        Task.detached(priority: .utility) {
+            let index = SystemDictionaries.load(dictionarySetURL: url)
+            await MainActor.run { [weak self] in
+                self?.applySystemDictionaryIndex(index)
+            }
+        }
+    }
+
+    private func applySystemDictionaryIndex(_ index: SystemDictionaryIndex) {
+        systemDictionaryIndex = index
+        systemDictionariesLoaded = true
+        statusMessage += " ／ システム辞書: \(index.totalEntryCount) エントリ"
     }
 
     // MARK: - Save

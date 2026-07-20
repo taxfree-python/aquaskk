@@ -10,7 +10,7 @@ struct JisyoEditorApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appDelegate.model)
-                .frame(minWidth: 780, minHeight: 480)
+                .frame(minWidth: 920, minHeight: 560)
         }
         .commands {
             // Replace the default Save item so ⌘S saves the dictionary.

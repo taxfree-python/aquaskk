@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Section
 
 /// Which of the two sections of an SKK user dictionary an entry belongs to.
-public enum OkuriSection: Equatable, Sendable {
+public enum OkuriSection: Equatable, Hashable, Sendable {
     /// Entries with okurigana (introduced by `;; okuri-ari entries.`).
     case okuriAri
     /// Entries without okurigana (introduced by `;; okuri-nasi entries.`).
@@ -268,6 +268,53 @@ public struct Document {
                 items[i] = .entry(updated)
                 return
             }
+        }
+    }
+
+    /// Create and insert a new, empty, dirty entry at the end of `section`, then
+    /// return it (so the caller has its `id` without a re-lookup). Insertion
+    /// point, in priority order:
+    ///  1. immediately after the LAST existing entry of that section, else
+    ///  2. immediately after the section's marker line if present, else
+    ///  3. a freshly appended marker line followed by the entry, both at the
+    ///     very end of `items`.
+    @discardableResult
+    public mutating func insertEntry(reading: String, section: OkuriSection) -> Entry {
+        let entry = Entry(reading: reading, candidates: [], section: section, isDirty: true)
+
+        // 1. After the last existing entry of the same section (highest index).
+        var lastSectionEntryIndex: Int?
+        for i in stride(from: items.count - 1, through: 0, by: -1) {
+            if case .entry(let existing) = items[i], existing.section == section {
+                lastSectionEntryIndex = i
+                break
+            }
+        }
+        if let idx = lastSectionEntryIndex {
+            items.insert(.entry(entry), at: idx + 1)
+            return entry
+        }
+
+        // 2. Right after the section marker line if it exists.
+        let marker = Document.markerLine(for: section)
+        if let markerIdx = items.firstIndex(where: {
+            if case .raw(let s) = $0 { return s == marker } else { return false }
+        }) {
+            items.insert(.entry(entry), at: markerIdx + 1)
+            return entry
+        }
+
+        // 3. Marker line missing entirely: append the marker then the entry.
+        items.append(.raw(marker))
+        items.append(.entry(entry))
+        return entry
+    }
+
+    /// The exact raw marker line that introduces a section.
+    static func markerLine(for section: OkuriSection) -> String {
+        switch section {
+        case .okuriAri: return ";; okuri-ari entries."
+        case .okuriNasi: return ";; okuri-nasi entries."
         }
     }
 

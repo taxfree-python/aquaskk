@@ -46,7 +46,8 @@ struct ContentView: View {
     }
 }
 
-/// Left pane: search field over a two-section list of readings.
+/// Left pane: search field over a two-section list of user readings, plus a
+/// third "system-only" section when searching.
 struct SidebarView: View {
     @EnvironmentObject private var model: AppModel
 
@@ -56,16 +57,44 @@ struct SidebarView: View {
                 .textFieldStyle(.roundedBorder)
                 .padding(8)
 
-            List(selection: $model.selectedEntryID) {
+            List(selection: Binding(
+                get: { model.sidebarSelection },
+                set: { model.sidebarSelection = $0 }
+            )) {
                 Section("送りなし") {
                     ForEach(model.filteredOkuriNashi) { entry in
-                        EntryRowView(entry: entry).tag(entry.id)
+                        EntryRowView(entry: entry)
+                            .tag(SidebarSelection.entry(entry.id))
                     }
                 }
                 Section("送りあり") {
                     ForEach(model.filteredOkuriAri) { entry in
-                        EntryRowView(entry: entry).tag(entry.id)
+                        EntryRowView(entry: entry)
+                            .tag(SidebarSelection.entry(entry.id))
                     }
+                }
+                SystemOnlySection()
+            }
+        }
+    }
+}
+
+/// Third sidebar section: readings that only exist in the system dictionaries.
+struct SystemOnlySection: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        let result = model.systemOnlyResults()
+        if !model.searchText.isEmpty, !result.rows.isEmpty {
+            Section("システム辞書のみ") {
+                ForEach(result.rows) { row in
+                    SystemOnlyRowView(reading: row.reading, section: row.section)
+                        .tag(SidebarSelection.systemReading(reading: row.reading, section: row.section))
+                }
+                if result.overflow > 0 {
+                    Text("…他 \(result.overflow) 件")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -99,7 +128,26 @@ struct EntryRowView: View {
     }
 }
 
-/// Right pane: resolves the selected entry to a binding and shows its editor.
+/// A single system-only reading row.
+struct SystemOnlyRowView: View {
+    let reading: String
+    let section: OkuriSection
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(reading)
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+            Text(section == .okuriAri ? "送りあり" : "送りなし")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+/// Right pane: three mutually-exclusive branches — a real selected entry, a
+/// system-only selected reading, or nothing selected.
 struct DetailContainerView: View {
     @EnvironmentObject private var model: AppModel
 
@@ -108,6 +156,9 @@ struct DetailContainerView: View {
             if let id = model.selectedEntryID, let entry = model.binding(for: id) {
                 EntryDetailView(entry: entry)
                     .id(id)
+            } else if let pending = model.pendingSystemSelection {
+                PendingSystemDetailView(reading: pending.reading, section: pending.section)
+                    .id("pending-\(pending.section == .okuriAri ? "A" : "N")-\(pending.reading)")
             } else {
                 ContentUnavailablePlaceholder()
             }
