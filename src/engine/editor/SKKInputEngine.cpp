@@ -206,7 +206,7 @@ void SKKInputEngine::ToggleKana() {
 
     SKKEntry& entry = context_->entry;
 
-    study(entry, SKKCandidate());
+    // このforkではトグル変換の読みを補完用に学習しない
 
     insert(entry.ToggleKana(inputMode()));
 }
@@ -215,8 +215,6 @@ void SKKInputEngine::ToggleJisx0201Kana() {
     terminate();
 
     SKKEntry& entry = context_->entry;
-    
-    study(entry, SKKCandidate());
 
     insert(entry.ToggleJisx0201Kana(inputMode()));
 }
